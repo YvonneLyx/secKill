@@ -139,7 +139,7 @@
             <!--是否移动-->
             <verbose>true</verbose>
             <!--是否自动覆盖-->
-            <overwrite>false</overwrite>
+            <overwrite>true</overwrite>
             <configurationFile>
               src/main/resources/mybatis-generator.xml
             </configurationFile>

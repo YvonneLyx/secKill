@@ -1,29 +1,22 @@
-package com.miaosha.service.model;
+package com.miaosha.controller.Mode;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
-public class ItemModel {
+public class ItemVO {
     private Integer id;
 
-    @NotBlank(message = "商品名称不能为空")
     private String title;
-
-    @NotNull(message = "商品价格不能为空")
-    @Min(value = 0,message = "商品价格必须大于0")
     private BigDecimal price;
 
-    @NotBlank(message = "商品描述不能为空")
     private String description;
 
-    @NotNull(message = "商品库存不能为空")
     private Integer stock;
 
     private Integer sales;
 
-    @NotBlank(message = "商品标签不能为空")
     private String imgUrl;
 
     public Integer getId() {
@@ -81,4 +74,5 @@ public class ItemModel {
     public void setImgUrl(String imgUrl) {
         this.imgUrl = imgUrl;
     }
+
 }

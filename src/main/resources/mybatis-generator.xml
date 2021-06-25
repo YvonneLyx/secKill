@@ -57,7 +57,7 @@
                         <!--                        <ignoreColumn column="FRED" />-->
                         <!--                        <columnOverride column="LONG_VARCHAR_FIELD" jdbcType="VARCHAR" />-->
                 </table>
-                <table tableName="user_password" domainObjectName="ItemStockDO" enableCountByExample="false"
+                <table tableName="item_stock" domainObjectName="ItemStockDO" enableCountByExample="false"
                        enableUpdateByExample="false" enableDeleteByExample="false"
                        enableSelectByExample="false" selectByExampleQueryId="false">
                         <!--                        <property name="useActualColumnNames" value="true"/>-->
