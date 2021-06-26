@@ -97,4 +97,22 @@ public class ItemServiceImpl implements ItemService {
 
 //        return null;
     }
+
+    @Transactional
+    @Override
+    public boolean decreaseStock(Integer itemId, Integer amount) {
+        int i = itemStockDOMapper.decreaseStock(itemId, amount);
+        if(i > 0) {
+            return true;
+        }else {
+            return false;
+        }
+
+
+    }
+
+    @Override
+    public void increaseSale(Integer id, int amount) {
+        itemDOMapper.increaseSale(id, amount);
+    }
 }

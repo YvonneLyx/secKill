@@ -28,7 +28,7 @@ import java.util.Random;
 
 @Controller("user")
 @RequestMapping(value = "/user")
-@CrossOrigin(originPatterns = "*", allowCredentials = "true", allowedHeaders = "*") //解决跨域问题 本地访问localhost 存在跨域问题  不能session共享
+@CrossOrigin(allowCredentials = "true", allowedHeaders = "*") //解决跨域问题 本地访问localhost 存在跨域问题  不能session共享
 public class UserController extends BaseController{
 
     @Autowired
@@ -48,10 +48,10 @@ public class UserController extends BaseController{
         }
 
         UserModel userModel = userService.login(telphone, this.encodeByMd5(password));
-//
-//        if(userModel == null) {
-//            return CommonReturnType.create("用户名密码错误");
-//        }
+
+        if(userModel == null) {
+            return CommonReturnType.create("用户名密码错误");
+        }
 
         //将登录凭证记录到session内
         this.request.getSession().setAttribute("IS_LOGIN", true);
