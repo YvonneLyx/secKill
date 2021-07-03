@@ -26,16 +26,17 @@ public class OrderController extends BaseController {
     @RequestMapping(value = "/createorder", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType create(
 //            @RequestParam(name = "user_id") Integer userId,
-                                   @RequestParam(name = "item_id") Integer itemId,
-                                   @RequestParam(name = "amount") Integer amount) throws BusinessException {
+                                   @RequestParam(name = "itemId") Integer itemId,
+                                   @RequestParam(name = "amount") Integer amount,
+                                   @RequestParam(name = "promoId", required = false) Integer promoId)  throws BusinessException {
 
-//        Boolean login = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
-//        if(login == null || !login.booleanValue()) {
-//            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN);
-//        }
-//        UserModel user = (UserModel) httpServletRequest.getSession().getAttribute("LOGIN_USER");
+        Boolean login = (Boolean) httpServletRequest.getSession().getAttribute("IS_LOGIN");
+        if(login == null || !login.booleanValue()) {
+            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN);
+        }
+        UserModel user = (UserModel) httpServletRequest.getSession().getAttribute("LOGIN_USER");
 
-        OrderModel model = orderService.createModel(Integer.valueOf(24), itemId, amount);
+        OrderModel model = orderService.createModel(user.getId(), itemId, amount, promoId);
 //        OrderVO orderVO = convertFromModel(model);
 //        return CommonReturnType.create(orderVO);
         return CommonReturnType.create(null);

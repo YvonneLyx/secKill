@@ -18,6 +18,10 @@ public class ItemModel {
     @NotBlank(message = "商品描述不能为空")
     private String description;
 
+    //使用聚合模型 （类嵌套），如果promoModel不为空，表示其拥有还未结束的秒杀活动
+    private PromoModel promoModel;
+
+
     @NotNull(message = "商品库存不能为空")
     private Integer stock;
 
@@ -48,6 +52,14 @@ public class ItemModel {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public PromoModel getPromoModel() {
+        return promoModel;
+    }
+
+    public void setPromoModel(PromoModel promoModel) {
+        this.promoModel = promoModel;
     }
 
     public String getDescription() {

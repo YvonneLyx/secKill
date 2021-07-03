@@ -9,7 +9,11 @@ import com.miaosha.error.BusinessException;
 import com.miaosha.error.EmBusinessError;
 import com.miaosha.service.ItemService;
 import com.miaosha.service.OrderService;
+import com.miaosha.service.PromoService;
+import com.miaosha.service.UserService;
+import com.miaosha.service.model.ItemModel;
 import com.miaosha.service.model.OrderModel;
+import com.miaosha.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,7 +34,13 @@ public class OrderServiceImpl implements OrderService {
     private UserDOMapper userDOMapper;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private ItemService itemService;
+
+//    @Autowired
+//    private PromoService promoService;
 
     @Autowired
     private OrderDOMapper orderDOMapper;
@@ -40,15 +50,30 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional
     @Override
-    public OrderModel createModel(Integer userId, Integer itemId, Integer amount) throws BusinessException {
+    public OrderModel createModel(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
         //校验用户是否存在， 商品是否存在，购买数量是否正确
-        ItemDO itemDO = itemDOMapper.selectByPrimaryKey(itemId);
-        if(itemDO == null) throw new BusinessException(EmBusinessError.USER_LOGIN_FAIL, "商品信息不存在");
+        ItemModel itemModel = itemService.getItemDetail(itemId);
+//        ItemDO itemDO = itemDOMapper.selectByPrimaryKey(itemId);
+        if(itemModel == null) throw new BusinessException(EmBusinessError.USER_LOGIN_FAIL, "商品信息不存在");
 
-        UserDO userDO = userDOMapper.selectByPrimaryKey(userId);
-        if(userDO == null) throw new BusinessException(EmBusinessError.USER_NOT_EXIST);
+        UserModel user = userService.getUser(userId);
+//        UserDO userDO = userDOMapper.selectByPrimaryKey(userId);
+        if(user == null) throw new BusinessException(EmBusinessError.USER_NOT_EXIST);
 
         if(amount < 0 || amount >= 99) throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR, "下单数量不正确");
+
+        //为null 是普通商品
+        if(promoId != null) {
+            //校验对应活动是否存在这个适用商品
+            if(promoId != itemModel.getPromoModel().getId()) {
+                throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR, "商品活动不匹配");
+            }else{
+                //还要校验活动是不是在进行中
+                if(itemModel.getPromoModel().getStatus() != 2) {
+                    throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR, "活动信息不正确");
+                }
+            }
+        }
 
         //落单减库存（采取这种）
         //支付减库存
@@ -60,8 +85,14 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setItemId(itemId);
         orderModel.setUserId(userId);
         orderModel.setAmount(amount);
-        orderModel.setItemPrice(new BigDecimal(itemDO.getPrice()));
+
+        if(promoId != null) {
+            orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
+        }else {
+            orderModel.setItemPrice(itemModel.getPrice());
+        }
         orderModel.setOrderPrice(new BigDecimal(amount).multiply(orderModel.getItemPrice()));
+        orderModel.setPromoId(promoId);
 
         //还要生成主键id，订单号
         String sid = generateOrderNo();

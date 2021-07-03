@@ -18,9 +18,9 @@ public class BaseController {
 
     //定义exceptionhandler解决未被controller层吸收的exception，都抛给了tomcat
     //业务处理最后一道关口，Spring钩子处理思想
-//    @ExceptionHandler(Exception.class)
-//    @ResponseStatus(HttpStatus.OK)
-//    @ResponseBody //不加这个显示的还是白页 error page
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody //不加这个显示的还是白页 error page
     public CommonReturnType handlerException(HttpServletRequest request, Exception ex) {
         Map<String, Object> respData = new HashMap<>();
         if(ex instanceof BusinessException) {

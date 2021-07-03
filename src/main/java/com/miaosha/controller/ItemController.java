@@ -8,6 +8,8 @@ import com.miaosha.response.CommonReturnType;
 import com.miaosha.service.ItemService;
 import com.miaosha.service.model.ItemModel;
 import com.miaosha.validator.ValidatorImpl;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +45,8 @@ public class ItemController extends BaseController {
 
 
         ItemVO itemVo = convertItemVOFromItemModel(itemModel);
+
+
         return CommonReturnType.create(itemVo);
     }
 
@@ -50,6 +54,16 @@ public class ItemController extends BaseController {
         if(itemModel == null) return null;
         ItemVO itemVO = new ItemVO();
         BeanUtils.copyProperties(itemModel, itemVO);
+
+        if(itemModel.getPromoModel() != null) {
+            //有正在进行或即将进行的秒杀活动
+            itemVO.setPromoStatus(itemModel.getPromoModel().getStatus());
+            itemVO.setStartDate(itemModel.getPromoModel().getStartDate().toString(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")));
+            itemVO.setPromoId(itemModel.getPromoModel().getId());
+            itemVO.setPromoPrice(itemModel.getPromoModel().getPromoItemPrice());
+        }else {
+            itemVO.setPromoStatus(0);
+        }
         return itemVO;
     }
 
