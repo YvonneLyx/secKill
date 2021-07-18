@@ -12,6 +12,7 @@ import com.miaosha.service.model.UserModel;
 import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Controller("user")
 @RequestMapping(value = "/user")
@@ -38,6 +41,9 @@ public class UserController extends BaseController{
     //springbean包装的servlet，本质是一个proxy，内部是ThreadLocalMap，用户可以在每个线程中处理自己的request，threadLocal清除机制。
     @Autowired
     private HttpServletRequest request;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @RequestMapping(value = "/login", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
@@ -53,11 +59,22 @@ public class UserController extends BaseController{
             return CommonReturnType.create("用户名密码错误");
         }
 
-        //将登录凭证记录到session内
-        this.request.getSession().setAttribute("IS_LOGIN", true);
-        this.request.getSession().setAttribute("LOGIN_USER", userModel);
+        //将登录凭证加入到用户登录成功的session内
 
-        return CommonReturnType.create(null);
+        //修改成若用户登录验证成功后将对应的登录信息和登录凭证一起存入redis中
+
+        //生成登录凭证token，UUID
+        String uuidToken = UUID.randomUUID().toString();
+        uuidToken = uuidToken.replace("-", "");
+        //建立token和用户登录状态之间的联系
+        redisTemplate.opsForValue().set(uuidToken, userModel);
+        redisTemplate.expire(uuidToken, 1, TimeUnit.HOURS);
+
+        //将登录凭证记录到session内
+//        this.request.getSession().setAttribute("IS_LOGIN", true);
+//        this.request.getSession().setAttribute("LOGIN_USER", userModel);
+
+        return CommonReturnType.create(uuidToken);
     }
 
 

@@ -12,6 +12,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -25,6 +26,9 @@ public class ItemController extends BaseController {
 
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @RequestMapping(value = "/create", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType create(@RequestParam(name = "title") String title,
@@ -79,8 +83,17 @@ public class ItemController extends BaseController {
     @RequestMapping(value = "/get_item_detail", method = {RequestMethod.GET})
     public CommonReturnType getItemDetail(@RequestParam(name = "id") Integer id) throws BusinessException {
         if(id == null) throw  new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
-        ItemModel itemModel = itemService.getItemDetail(id);
+//        ItemModel itemModel = itemService.getItemDetail(id);
 //        return CommonReturnType.create(itemModel);
+
+        //先去redis中获取itemModel，如果redis中没有，去下游service中获取，否则直接返回给前端。
+        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+
+        if(itemModel == null) {
+            itemModel = itemService.getItemDetail(id);
+            redisTemplate.opsForValue().set("item_" + id, itemModel);
+        }
+
         ItemVO itemVO = convertItemVOFromItemModel(itemModel);
         return CommonReturnType.create(itemVO);
     }
