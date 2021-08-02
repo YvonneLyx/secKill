@@ -16,6 +16,7 @@ import com.miaosha.service.model.OrderModel;
 import com.miaosha.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,12 +53,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderModel createModel(Integer userId, Integer itemId, Integer amount, Integer promoId) throws BusinessException {
         //校验用户是否存在， 商品是否存在，购买数量是否正确
-        ItemModel itemModel = itemService.getItemDetail(itemId);
+//        ItemModel itemModel = itemService.getItemDetail(itemId);
 //        ItemDO itemDO = itemDOMapper.selectByPrimaryKey(itemId);
+        ItemModel itemModel = itemService.getItemByIdInCache(itemId);
         if(itemModel == null) throw new BusinessException(EmBusinessError.USER_LOGIN_FAIL, "商品信息不存在");
 
-        UserModel user = userService.getUser(userId);
+//        UserModel user = userService.getUser(userId);
 //        UserDO userDO = userDOMapper.selectByPrimaryKey(userId);
+        UserModel user = userService.getUserByIdInCache(userId);
         if(user == null) throw new BusinessException(EmBusinessError.USER_NOT_EXIST);
 
         if(amount < 0 || amount >= 99) throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR, "下单数量不正确");

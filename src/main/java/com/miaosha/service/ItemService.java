@@ -19,4 +19,7 @@ public interface ItemService {
     boolean decreaseStock(Integer itemId, Integer amount);
 
     void increaseSale(Integer id, int amount);
+
+    //item 及 promo model模型
+    ItemModel getItemByIdInCache(Integer itemId);
 }

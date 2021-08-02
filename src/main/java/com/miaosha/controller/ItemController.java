@@ -5,8 +5,11 @@ import com.miaosha.controller.Mode.ItemVO;
 import com.miaosha.error.BusinessException;
 import com.miaosha.error.EmBusinessError;
 import com.miaosha.response.CommonReturnType;
+import com.miaosha.service.CacheService;
 import com.miaosha.service.ItemService;
+import com.miaosha.service.PromoService;
 import com.miaosha.service.model.ItemModel;
+import com.miaosha.service.model.PromoModel;
 import com.miaosha.validator.ValidatorImpl;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -29,6 +32,12 @@ public class ItemController extends BaseController {
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private CacheService cacheService;
+
+    @Autowired
+    private PromoService promoService;
 
     @RequestMapping(value = "/create", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType create(@RequestParam(name = "title") String title,
@@ -80,19 +89,41 @@ public class ItemController extends BaseController {
         return CommonReturnType.create(list);
     }
 
+    //运营加上去的
+    @RequestMapping(value = "/publishpromo", method = {RequestMethod.GET})
+    public CommonReturnType publishPromo(@RequestParam(name = "id") Integer id){
+        promoService.getPromoById(id);
+//        redisTemplate.opsForValue().set("promo_item_stock_" + itemModel.getId(), itemModel.getStock());
+
+        return CommonReturnType.create(null);
+
+    }
+
     @RequestMapping(value = "/get_item_detail", method = {RequestMethod.GET})
     public CommonReturnType getItemDetail(@RequestParam(name = "id") Integer id) throws BusinessException {
         if(id == null) throw  new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
 //        ItemModel itemModel = itemService.getItemDetail(id);
 //        return CommonReturnType.create(itemModel);
 
-        //先去redis中获取itemModel，如果redis中没有，去下游service中获取，否则直接返回给前端。
-        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+        ItemModel itemModel = null;
+
+        itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
 
         if(itemModel == null) {
-            itemModel = itemService.getItemDetail(id);
-            redisTemplate.opsForValue().set("item_" + id, itemModel);
+
+            //先去redis中获取itemModel，如果redis中没有，去下游service中获取，否则直接返回给前端。
+            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+
+            if(itemModel == null) {
+                itemModel = itemService.getItemDetail(id);
+                redisTemplate.opsForValue().set("item_" + id, itemModel);
+            }
+
+            cacheService.setCommonCache("item_" + id, itemModel);
+
         }
+
+
 
         ItemVO itemVO = convertItemVOFromItemModel(itemModel);
         return CommonReturnType.create(itemVO);

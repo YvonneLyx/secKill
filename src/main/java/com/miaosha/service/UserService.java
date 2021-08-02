@@ -11,4 +11,6 @@ public interface UserService {
     void register(UserModel userModel) throws BusinessException;
 
     UserModel login(String telphone, String paramPswd) throws BusinessException;
+
+    UserModel getUserByIdInCache(Integer userId);
 }

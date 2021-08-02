@@ -6,14 +6,20 @@ import com.miaosha.dataobject.ItemDO;
 import com.miaosha.dataobject.ItemStockDO;
 import com.miaosha.error.BusinessException;
 import com.miaosha.error.EmBusinessError;
+import com.miaosha.mq.MqProducer;
 import com.miaosha.service.ItemService;
 import com.miaosha.service.PromoService;
 import com.miaosha.service.model.ItemModel;
 import com.miaosha.service.model.PromoModel;
 import com.miaosha.validator.ValidationResult;
 import com.miaosha.validator.ValidatorImpl;
+import org.apache.rocketmq.client.exception.MQBrokerException;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +29,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
+
+    @Autowired
+    private MqProducer mqProducer;
 
     @Autowired
     private ItemDOMapper itemDOMapper;
@@ -35,6 +44,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Autowired
     private PromoService promoService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Transactional
     @Override
@@ -110,12 +122,30 @@ public class ItemServiceImpl implements ItemService {
 //        return null;
     }
 
+    public ItemModel getItemByIdInCache(Integer itemId) {
+        ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_validate_"+itemId);
+        if(itemModel == null) {
+            itemModel = this.getItemDetail(itemId);
+            redisTemplate.opsForValue().set("item_validate_" + itemId, itemModel);
+        }
+        return itemModel;
+    }
+
+
     @Transactional
     @Override
     public boolean decreaseStock(Integer itemId, Integer amount) {
-        int i = itemStockDOMapper.decreaseStock(itemId, amount);
-        if(i > 0) {
-            return true;
+        long i = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount.intValue() * -1);
+//        int i = itemStockDOMapper.decreaseStock(itemId, amount);
+
+        if(i >= 0) {
+            boolean isSuccess = mqProducer.asyncReduceStock(itemId, amount);
+            if(!isSuccess) {
+                redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount.intValue());
+                return false;
+            }else {
+                return true;
+            }
         }else {
             return false;
         }

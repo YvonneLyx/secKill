@@ -2,11 +2,14 @@ package com.miaosha.service.impl;
 
 import com.miaosha.dao.PromoDOMapper;
 import com.miaosha.dataobject.PromoDO;
+import com.miaosha.service.ItemService;
+import com.miaosha.service.model.ItemModel;
 import com.miaosha.service.model.PromoModel;
 import com.miaosha.service.PromoService;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,6 +19,12 @@ public class PromoServiceImpl implements PromoService {
 
     @Autowired
     private PromoDOMapper promoDOMapper;
+
+    @Autowired
+    private ItemService itemService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Override
     public PromoModel getPromoByItemId(Integer itemId) {
@@ -33,6 +42,21 @@ public class PromoServiceImpl implements PromoService {
         return promoModel;
 
     }
+
+    //这个是活动开始前运营加上去的
+    public void getPromoById(Integer id) {
+        PromoDO promoDO = promoDOMapper.selectByPrimaryKey(id);
+//        return convertToModel(promoDO);
+
+        if(promoDO.getItemId() == null || promoDO.getItemId().intValue() == 0) {
+            return ;
+        }
+        ItemModel itemModel = itemService.getItemDetail(promoDO.getItemId());
+//        return itemModel;
+        redisTemplate.opsForValue().set("promo_item_stock_" + itemModel.getId(), itemModel.getStock());
+        return;
+    }
+
 
     private PromoModel convertToModel(PromoDO promoDO) {
         if(promoDO == null) return null;

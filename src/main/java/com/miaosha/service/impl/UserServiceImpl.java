@@ -15,6 +15,7 @@ import com.miaosha.validator.ValidatorImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private ValidatorImpl validator;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     //通过id获取对象
     @Override
@@ -93,6 +97,17 @@ public class UserServiceImpl implements UserService {
         UserModel model = convertFromDataObject(userDO, userPasswordDO);
         return model;
 
+    }
+
+    @Override
+    public UserModel getUserByIdInCache(Integer userId) {
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get("user_validate_"+ userId);
+
+        if(userModel == null) {
+            userModel = this.getUser(userId);
+            redisTemplate.opsForValue().set("user_validate_" + userId, userModel);
+        }
+        return userModel;
     }
 
     private UserDO ConvertFromUserModel(UserModel userModel) throws BusinessException {
