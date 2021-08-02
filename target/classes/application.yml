@@ -25,3 +25,10 @@ spring:
         min-idle: 20
 mybatis:
   mapper-locations: classpath:mapping/*.xml
+
+#配置mq
+mq:
+  nameserver:
+    addr: 10.1.1.89:9876
+  topic:
+    name: stock
